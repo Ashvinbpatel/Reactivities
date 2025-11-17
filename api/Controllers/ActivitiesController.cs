@@ -1,23 +1,37 @@
-using System;
+using application.Activities.Commands;
+using application.Activities.Queries;
 using domain;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using persistence;
 
 namespace api.Controllers;
 
-public class ActivitiesController(AppDbContext context) : BaseApiCotroller
+public class ActivitiesController() : BaseApiCotroller
 {
     [HttpGet]
-    public async Task<ActionResult<List<Activity>>> GetActivities()
+    public async Task<ActionResult<List<Activity>>> GetActivities(CancellationToken ct)
     {
-        return await context.Activities.ToListAsync();
+        return await Mediator.Send(new GetActivityList.Query(),ct);
     }
     [HttpGet("{id}")]
     public async Task<ActionResult<Activity>> GetActivityDetail(String id)
     {
-        var activity = await context.Activities.FindAsync(id);
-        if(activity == null) return NotFound();
-        return activity;
+        return await Mediator.Send(new GetActivityDetails.Query { Id = id });
+    }
+    [HttpPost]
+    public async Task<ActionResult<String>> CreateActivity(Activity act)
+    {
+        return await Mediator.Send(new CreateActivity.Command { activity = act });
+    }
+    [HttpPut]
+    public async Task<IActionResult> EditActivity(Activity act)
+    {
+        await Mediator.Send(new EditActivity.Command { activity = act });
+        return NoContent();
+    }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteActivity(String id)
+    {
+        await Mediator.Send(new DeleteActivity.Command { Id = id });
+        return Ok();
     }
 }
